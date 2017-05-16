@@ -1,0 +1,29 @@
+[SAS]
+
+proc import datafile="bdata-c.csv" out=bdata dbms=csv replace;
+	getnames=yes;
+run;
+proc logistic descending data = bdata COVOUT OUTEST=para;
+model bstatus = cf_td ca_cl re_ta ni_ta td_ta s_ta c_cl;
+run;
+
+[R]
+
+bdata <- read.csv("bdata-c.csv", na.strings = c("NA","",".","?"),strip.white=TRUE)
+bdata_glm <- glm(bstatus ~ cf_td+ca_cl+re_ta+ni_ta+td_ta+s_ta+c_cl, data = bdata, family = binomial(link = "logit"))
+summary.glm(bdata_glm)
+
+[Python]
+
+import pandas as pd
+from sklearn import linear_model
+from patsy import dmatrices
+import numpy as np
+
+bdata = pd.read_csv("bdata-c.txt", sep="\t")
+all_y, all_X = dmatrices('bstatus ~ cf_td+ca_cl+re_ta+ni_ta+td_ta+s_ta+wc_s+c_cl+cl_e+in_s+mve_td',bdata,return_type="dataframe")
+all_y = np.ravel(all_y)
+
+log_model = linear_model.LogisticRegression()
+log_model.fit(all_X, all_y)
+pd.DataFrame(zip(all_X.columns, np.transpose(log_model.coef_)))
